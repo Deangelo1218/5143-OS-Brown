@@ -1,8 +1,9 @@
 from random import shuffle
 from random import seed
 from random import randint
+from random import random
 import json
-#from rich import print 
+from rich import print 
 import sys
 from registers import Registers
 import threading
@@ -11,12 +12,21 @@ from time import sleep
 from random import shuffle
 from datetime import datetime
 import datetime
-import rwlock
+from rich.live import Live
+from rich.table import Table
 
 
 from rwlock import * 
 
 LOCK = RWLock()
+LOCK_A = RWLock()
+LOCK_B = RWLock()
+LOCK_C = RWLock()
+
+threadTable = Table()
+threadTable.add_column("Thread ID")
+threadTable.add_column("Thread Status")
+threadTable.add_column("Memory Block : Memory Address")
 
 
 Reader_Thread = []
@@ -24,14 +34,12 @@ Writer_Thread = []
 stop_reader = False
 
 mem = None
-put_file = "memory1.json"
-
-with open(put_file) as f:
+with open("memory1.json") as f:
     mem = json.load(f)  
 
 registers = Registers(2)
 
-Lock_entire = False
+# Lock_entire = False
 
 
 def ADD(a,b):
@@ -56,7 +64,7 @@ OPS = {
     "DIV":DIV,
 }
 
-def reader(file):
+def reader(file,id):
   
     instructions = []
     
@@ -68,6 +76,9 @@ def reader(file):
     for insts in instructions:
       
         #acquire
+        time.sleep(random())
+        threadTable.add_row(f"[green]Reader {id}","[green]Acquiring Reader Lock",f"Locking Down Memory To Read")
+        #print(f"reader {id} attempting acquire lock...")
         LOCK.reader_acquire()
         for inst in insts:
             #print(inst)
@@ -89,14 +100,17 @@ def reader(file):
                 registers[register] = mem[memBlock][memAddr]
                       
         LOCK.reader_release()
-        sleep(0.5)
-    sleep(1)
+        threadTable.add_row(f"[red]Reader {id}", f"[red]Released Reader Lock", f"Reading From Memory Location[purple]{memBlock}:{memAddr}")
+        #print(f"reader {id} released the lock...")
+        time.sleep(random())
+    
         # release
     #print(mem)
               
                   
 #print(mem)
-def reader_Segments(file):
+def reader_Segments(file, id):
+    global mem
     instructions = []
     
     with open(file) as f:
@@ -119,57 +133,72 @@ def reader_Segments(file):
 
             if stop_reader:
               break
-            
+
+
+            time.sleep(random())
+            print(f"reader {id} attempting acquire lock for A...")
+            LOCK_A.reader_acquire()
             if memBlock == "A":
-              LOCK.reader_acquire()
-              #print("Reading from A")
+              # LOCK.reader_acquire()
+              # print("Reading from A")
               if i == "READ":
                 #print("Reader is Reading")
                 registers[register] = mem[memBlock][memAddr]
-                LOCK.reader_release()
-                sleep(0.5)
-                
+            LOCK_A.reader_release()
+            print(f"reader {id} released the lock for A...")
+            time.sleep(random())
+
+
+            time.sleep(random())
+            print(f"reader {id} attempting acquire lock for B...")
+            LOCK_B.reader_acquire()
             if memBlock == "B":
               
-              LOCK.reader_acquire()
-              #print("Reading from B")
+              # LOCK.reader_acquire()
+              # print("Reading from B")
               if i == "READ":
                 #print("Reader is Reading")
                 registers[register] = mem[memBlock][memAddr]
-                LOCK.reader_release()
-                sleep(0.5)
+            LOCK_B.reader_release()
+            print(f"reader {id} released the lock for B...")
+            time.sleep(random())
+
+            time.sleep(random())
+            print(f"reader {id} attempting acquire lock for C...")
+            LOCK_C.reader_acquire()
                   
             if memBlock == "C":
              
-              LOCK.reader_acquire()
-              #print("Reading from C")
+              # LOCK.reader_acquire()
+              # print("Reading from C")
               if i == "READ":
                 #print("Reader is Reading")
                 registers[register] = mem[memBlock][memAddr]
-                LOCK.reader_release()
-                sleep(0.5)
+            LOCK_C.reader_release()
+            print(f"reader {id} released the lock for C...")
+            time.sleep(random())
 
 
-            if memBlock == "P":
+            # if memBlock == "P":
              
-              LOCK.reader_acquire()
-              #print("Reading from C")
-              if i == "READ":
-                #print("Reader is Reading")
-                registers[register] = mem[memBlock][memAddr]
-                LOCK.reader_release()
-                sleep(0.5)
+            #   LOCK.reader_acquire()
+            #   #print("Reading from C")
+            #   if i == "READ":
+            #     #print("Reader is Reading")
+            #     registers[register] = mem[memBlock][memAddr]
+            #     LOCK.reader_release()
+            #     sleep(0.1)
 
 
         
         # release
-    return (mem)
+    
     #print(mem)
               
                   
 #print(mem)
 
-def writer(file):
+def writer(file,id):
     
     instructions = []
     
@@ -182,6 +211,9 @@ def writer(file):
         #print(insts)
     
         #acquire
+        time.sleep(random())
+        threadTable.add_row(f"[green]Writer {id}", f"[green]Acquiring Writer Lock", f"Locking Down Memory To Write")
+        #print(f"writer {id} attempting acquire lock...")
         LOCK.writer_acquire()
         for inst in insts:
             #print(inst)
@@ -210,14 +242,17 @@ def writer(file):
                 mem[memBlock][memAddr] = registers[0]
           
         LOCK.writer_release()
-        sleep(0.5)
-    sleep(1)
+        threadTable.add_row(f"[red]Writer {id}", f"[red]Releasing Writer Lock", f"Writing To Memory Location [purple]{memBlock}:{memAddr}")
+        #print(f"writer {id} released the lock...")
+        time.sleep(1)
+    
         # release
     #print(mem)
     return(mem)
 
-def writer_Segments(file):
+def writer_Segments(file, id):
 
+    global mem
     instructions = []
     #WRITER = Writer()
     
@@ -241,13 +276,11 @@ def writer_Segments(file):
             memAddr = loc[1:]
             register = int(reg[1]) -1
 
-            LOCK.writer_acquire()
+            time.sleep(random())
+            print(f"writer {id} attempting acquire lock for A...")
+            LOCK_A.writer_acquire()
             if memBlock == "A":
-              
-              # LOCK.writer_acquire()
-              #print("Writing in A")
-              if i == "READ":           
-                  registers[register] = mem[memBlock][memAddr]
+            
                 
               if i in ['ADD','SUB','MUL','DIV']:
                 #print("arithmetic")
@@ -256,15 +289,16 @@ def writer_Segments(file):
               if i == "WRITE":
                 #print("Writer is writing")
                 mem[memBlock][memAddr] = registers[0]
-            LOCK.writer_release()
-            sleep(0.1)
+            LOCK_A.writer_release()
+            print(f"writer {id} released the lock for A...")
+            time.sleep(random())
                 
-            LOCK.writer_acquire()
+            time.sleep(random())
+            print(f"writer {id} attempting acquire lock for B...")
+            LOCK_B.writer_acquire()
             if memBlock == "B":
               # LOCK.writer_acquire()
               #print("Writing in B")
-              if i == "READ":           
-                  registers[register] = mem[memBlock][memAddr]
                 
               if i in ['ADD','SUB','MUL','DIV']:
                 #print("arithmetic")
@@ -274,16 +308,17 @@ def writer_Segments(file):
                 #print("Writer is writing")
                 mem[memBlock][memAddr] = registers[0]
                 
-            LOCK.writer_release()
-            sleep(0.1)
+            LOCK_B.writer_release()
+            print(f"writer {id} released the lock for B...")
+            time.sleep(random())
           
-            LOCK.writer_acquire()
+            time.sleep(random())
+            print(f"writer {id} attempting acquire lock for C...")
+            LOCK_C.writer_acquire()
             if memBlock == "C":
               # LOCK.writer_acquire()
               #print("Writing in C")
-              if i == "READ":           
-                  registers[register] = mem[memBlock][memAddr]
-                
+         
               if i in ['ADD','SUB','MUL','DIV']:
                 #print("arithmetic")
                 registers[0] = OPS[i](registers[0],registers[1])
@@ -291,25 +326,26 @@ def writer_Segments(file):
               if i == "WRITE":
                 #print("Writer is writing")
                 mem[memBlock][memAddr] = registers[0]
-            LOCK.writer_release()
-            sleep(0.1)
+            LOCK_C.writer_release()
+            print(f"writer {id} released the lock for C...")
+            time.sleep(random())
 
-            LOCK.writer_acquire()
-            if memBlock == "P":
-              # LOCK.writer_acquire()
-              #print("Writing in C")
-              if i == "READ":           
-                  registers[register] = mem[memBlock][memAddr]
+            # LOCK.writer_acquire()
+            # if memBlock == "P":
+            #   # LOCK.writer_acquire()
+            #   #print("Writing in C")
+            #   if i == "READ":           
+            #       registers[register] = mem[memBlock][memAddr]
                 
-              if i in ['ADD','SUB','MUL','DIV']:
-                #print("arithmetic")
-                registers[0] = OPS[i](registers[0],registers[1])
+            #   if i in ['ADD','SUB','MUL','DIV']:
+            #     #print("arithmetic")
+            #     registers[0] = OPS[i](registers[0],registers[1])
               
-              if i == "WRITE":
-                #print("Writer is writing")
-                mem[memBlock][memAddr] = registers[0]
-            LOCK.writer_release()
-            sleep(0.1)
+            #   if i == "WRITE":
+            #     print("Writer is writing")
+            #     mem[memBlock][memAddr] = registers[0]
+            #   LOCK.writer_release()
+            #   sleep(0.1)
 
             
       
@@ -320,7 +356,8 @@ if __name__=='__main__':
 
     
     num_writers = int(sys.argv[1])
-    num_readers = num_writers * 5
+    num_readers = num_writers * 2
+    with Live(threadTable, refresh_per_second=4):
 
     # different_target = sys.argv[2]
     # if different_target == 1:
@@ -329,35 +366,32 @@ if __name__=='__main__':
     #   different_target = writer_Segments
   
     #start the timer here
-    start_times = datetime.datetime.now()
-    #Create threads for readers/writers for whole file
-    for i in range(num_readers):
-        Reader_Thread.append(threading.Thread(target=reader, args=(f"reader_{i}.exe",)))
+      start_times = datetime.datetime.now()
+      #Create threads for readers/writers for whole file
+      for i in range(num_readers):
+          Reader_Thread.append(threading.Thread(target=reader, args=(f"reader_{i}.exe",i,)))
+        
+      for i in range(num_writers):
+          Writer_Thread.append(threading.Thread(target=writer, args=(f"writer_{i}.exe",i,)))
+      #shuffle the threads
+      shuffle(Reader_Thread)
+      shuffle(Writer_Thread)
+      #start each process
+      for process in Reader_Thread:
+        process.start()
+      for process in Writer_Thread:
+        process.start()
+
+      for joins in Writer_Thread:
+        joins.join()
+      stop_reader = True
+      end_times = datetime.datetime.now()
+      print("Logging time = ",end_times - start_times)
+    
+      #create the new file and dump memory after locking and unlocking with readers
+      display_memory = "memory_242.json"
+      with open(display_memory, "w") as f:
+        json.dump(mem, f, indent=4)
+
+      #Time for code sections = 33:33.569164
       
-    for i in range(num_writers):
-        Writer_Thread.append(threading.Thread(target=writer, args=(f"writer_{i}.exe",)))
-    #shuffle the threads
-    shuffle(Reader_Thread)
-    shuffle(Writer_Thread)
-    #start each process
-    for process in Reader_Thread:
-      process.start()
-    for process in Writer_Thread:
-      process.start()
-
-    for joins in Writer_Thread:
-      joins.join()
-    stop_reader = True
-    end_times = datetime.datetime.now()
-    print("Logging time = ",end_times - start_times)
-  
-    #create the new file and dump memory after locking and unlocking with readers
-    display_memory = "memory_after.json"
-    with open(display_memory, "w") as f:
-      json.dump(mem, f, indent=4)
-    
- 
-   
-
-  
-    
