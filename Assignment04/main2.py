@@ -39,6 +39,7 @@ with open("memory1.json") as f:
 RWTable = Table()
 RWTable.add_column("ID")
 RWTable.add_column("Status")
+RWTable.add_column("Memory Block : Memory Address")
 #Using locks
 
 RegularLock = Lock()
@@ -86,8 +87,9 @@ def program(file, id):
             
             
             if priorityInstruction == False:
+               
                 time.sleep(random())
-                RWTable.add_row(f"[magenta]Thread {id} with no Priority","[magenta]Waiting Lock")
+                #RWTable.add_row(f"[magenta]Thread {id} with no Priority","[magenta]Waiting for Lock",f"At Memory Location [magenta]{memBlock}:{memAdd}")
                 #print(f"Thread {id} waiting for lock because not priority")
                 RegularLock.wait()
                 
@@ -98,10 +100,12 @@ def program(file, id):
 
                 if typeIns == "READ":
                     #temp = insts[-1]
+                    
                     temp = insts[-1].strip()[1:]
                     temp2 = int(temp) - 1
                     memBlock = insts[1].strip()[0]
                     memAdd = insts[1].strip()[1:]
+                    RWTable.add_row(f"[magenta]Thread {id} with no Priority","[magenta]Waiting to read",f"At Memory Location [magenta]{memBlock}:{memAdd}")
                     #print(memAdd)
                     #sample = temp[1:]
                     #print(temp)
@@ -116,52 +120,33 @@ def program(file, id):
 
                 if typeIns == "WRITE":
                     #print("Writer is writing")
+                    RWTable.add_row(f"[magenta]Thread {id} with no Priority","[magenta]Waiting to write",f"At Memory Location [magenta]{memBlock}:{memAdd}")
                     memory[memBlock][memAdd] = registers[0]
-                time.sleep(random())
+               # time.sleep(random())
 
                     #print(memory[memBlock][memAdd])
 
                     #"LOAD 0 R3",
-            time.sleep(random())
-            RWTable.add_row(f"[red]Thread {id} with Priority","[red]Acquiring the Lock")
+            #time.sleep(random())
+            # RWTable.add_row(f"[red]Thread {id} with Priority","[red]Acquiring the Lock")
             #print(f"Thread {id} is a priority thread so it acquires the lock")
-            PriorityLock.acquire()
+            #PriorityLock.acquire()
             if typeIns == "LOAD":
+                RWTable.add_row(f"[red]Thread {id} with Priority","[red]Acquiring the Lock")
+                PriorityLock.acquire()
                 priorityInstruction = True
                 temp = insts[1]
-                final = int(insts[-1].strip()[1:])
+                final = int(insts[-1].strip()[1:]) - 1
+                #print(temp, final)
                 registers[final] = temp
-                #print("MY TURN")
                 #print(registers[final])
-            PriorityLock.release()
-            RWTable.add_row(f"[green]Thread {id} with Priority","[green]Releasing the Lock")
-            #print(f"Thread {id} is a priority thread and releases the lock")
+           
+                
+                PriorityLock.release()
+                RWTable.add_row(f"[green]Thread {id} with Priority","[green]Releasing the Lock",f"Loading {insts[1]} in Register {final}")
+                #RWTable.add_row(f"[green]Thread {id} with Priority","[green]Releasing the Lock",f"Loading {temp} in Register {registers[final]}")
+                #print(f"[green]Thread {id} with Priority","[green]Releasing the Lock",f"Loading {insts[1]} in Register {final}")
             time.sleep(random())
-
-
-                
-
-
-                #print(registers[temp2])
-
-                #print(registers[int(insts[-1].split())[1:]])
-               
-
-                
-                
-
-            
-          
-
-            
-            
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
