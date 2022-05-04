@@ -23,11 +23,11 @@ LOCK_A = RWLock()
 LOCK_B = RWLock()
 LOCK_C = RWLock()
 
-threadTable = Table()
-threadTable.add_column("Thread ID")
-threadTable.add_column("Thread Status")
-threadTable.add_column("Memory Block : Memory Address")
 
+RWTable = Table()
+RWTable.add_column("ID")
+RWTable.add_column("Status")
+RWTable.add_column("Memory Usage")
 
 Reader_Thread = []
 Writer_Thread = []
@@ -77,7 +77,7 @@ def reader(file,id):
       
         #acquire
         time.sleep(random())
-        threadTable.add_row(f"[green]Reader {id}","[green]Acquiring Reader Lock",f"Locking Down Memory To Read")
+        RWTable.add_row(f"[red]Reader {id}","[red]Acquiring Reader Lock",f"Locking Down Memory To Read")
         #print(f"reader {id} attempting acquire lock...")
         LOCK.reader_acquire()
         for inst in insts:
@@ -96,11 +96,10 @@ def reader(file,id):
 
             # loads registers 
             if i == "READ":
-                #print("Reader is Reading")
                 registers[register] = mem[memBlock][memAddr]
                       
         LOCK.reader_release()
-        threadTable.add_row(f"[red]Reader {id}", f"[red]Released Reader Lock", f"Reading From Memory Location[purple]{memBlock}:{memAddr}")
+        RWTable.add_row(f"[green]Reader {id}", f"[green]Released Reader Lock", f"Reading From Memory Location[purple]{memBlock}:{memAddr}")
         #print(f"reader {id} released the lock...")
         time.sleep(random())
     
@@ -212,7 +211,7 @@ def writer(file,id):
     
         #acquire
         time.sleep(random())
-        threadTable.add_row(f"[green]Writer {id}", f"[green]Acquiring Writer Lock", f"Locking Down Memory To Write")
+        RWTable.add_row(f"[red]Writer {id}", f"[red]Acquiring Reader Lock", f"Locking Down Memory To Write")
         #print(f"writer {id} attempting acquire lock...")
         LOCK.writer_acquire()
         for inst in insts:
@@ -242,7 +241,7 @@ def writer(file,id):
                 mem[memBlock][memAddr] = registers[0]
           
         LOCK.writer_release()
-        threadTable.add_row(f"[red]Writer {id}", f"[red]Releasing Writer Lock", f"Writing To Memory Location [purple]{memBlock}:{memAddr}")
+        RWTable.add_row(f"[green]Writer {id}", f"[green]Releasing Writer Lock", f"Writing To Memory Location [purple]{memBlock}:{memAddr}")
         #print(f"writer {id} released the lock...")
         time.sleep(1)
     
@@ -357,7 +356,7 @@ if __name__=='__main__':
     
     num_writers = int(sys.argv[1])
     num_readers = num_writers * 2
-    with Live(threadTable, refresh_per_second=4):
+    with Live(RWTable, refresh_per_second=4):
 
     # different_target = sys.argv[2]
     # if different_target == 1:
